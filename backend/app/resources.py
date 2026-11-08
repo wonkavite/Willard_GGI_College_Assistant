@@ -6,6 +6,7 @@ import weaviate
 from dotenv import load_dotenv
 from groq import AsyncGroq
 from sentence_transformers import SentenceTransformer
+from weaviate.classes.init import AdditionalConfig, Timeout
 
 
 # ============================================================
@@ -82,8 +83,13 @@ async def initialize_resources():
         # 1. Weaviate asynchronous connection
         client = weaviate.use_async_with_weaviate_cloud(
             cluster_url=weaviate_url,
-            auth_credentials=weaviate.auth.AuthApiKey(
-                weaviate_key
+            auth_credentials=weaviate.auth.AuthApiKey(weaviate_key),
+            additional_config=AdditionalConfig(
+                timeout=Timeout(
+                    init=30,
+                    query=60,
+                    insert=120
+                )
             )
         )
 

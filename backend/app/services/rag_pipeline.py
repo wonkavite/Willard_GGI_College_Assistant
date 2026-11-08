@@ -9,7 +9,8 @@ from app.services.generation import (
 
 
 async def run_rag_pipeline(
-    query: str
+    query: str,
+    history: list[dict[str, str]] | None = None
 ) -> AsyncGenerator[str, None]:
     """
     Execute the complete Willard RAG pipeline.
@@ -30,6 +31,7 @@ async def run_rag_pipeline(
     async for response_chunk in call_rag_stream(
         query=query,
         system_instructions=SYSTEM_INSTRUCTIONS,
-        retrieved_chunks=retrieved_chunks
+        retrieved_chunks=retrieved_chunks,
+        history=history
     ):
         yield response_chunk

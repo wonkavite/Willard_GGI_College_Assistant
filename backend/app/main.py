@@ -54,3 +54,7 @@ async def health():
     return {
         "status": "healthy"
     }
+
+
+#.\.venv\Scripts\Activate.ps1
+#python -m uvicorn app.main:app --app-dir backend

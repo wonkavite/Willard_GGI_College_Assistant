@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="description"
+        content="Willard - Your intelligent college information assistant for Global Group of Institutes."
+    >
+
+    <meta name="theme-color" content="#173B70">
+
+    <title>Willard | GGI College Assistant</title>
+</head>
+
+
+<body class="min-h-screen bg-[#F4F7FC] text-[#243449]">
+
+    <div id="app">
+
+        <!-- Landing View -->
+        <div id="landing-view">
+            <!-- Navigation -->
+            <header class="border-b border-[#DCE4EF] bg-white">
+                <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+
+                    <a href="#" class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#173B70] text-xl font-bold text-white">
+                            W
+                        </div>
+                        <span class="text-2xl font-bold text-[#173B70]">Willard</span>
+                    </a>
+
+                    <span class="text-sm font-medium text-[#718096]">
+                        GGI College Assistant
+                    </span>
+
+                </nav>
+            </header>
+
+            <main class="flex min-h-[calc(100vh-100px)] flex-col items-center justify-center px-6 py-16 text-center">
+
+                <div class="max-w-3xl">
+
+                    <div class="mb-7 inline-flex items-center gap-2 rounded-full border border-[#DCE4EF] bg-white px-4 py-2 text-sm font-medium text-[#245A9B]">
+                        <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                        GGI College Assistant
+                    </div>
+
+                    <h1 class="text-4xl font-bold leading-tight text-[#173B70] sm:text-5xl md:text-6xl">
+                        Your College.
+                        <br>
+                        Your Questions.
+                        <br>
+                        One Assistant.
+                    </h1>
+
+                    <p class="mx-auto mt-7 max-w-xl text-base leading-8 text-[#718096] sm:text-lg">
+                        Welcome to Willard, your intelligent college information assistant.
+                        Get reliable answers to your questions about Global Group of Institutes.
+                    </p>
+
+                    <div class="mt-10">
+                        <button data-open-chat
+                            class="rounded-xl bg-[#173B70] px-8 py-4 font-semibold text-white transition hover:bg-[#245A9B]">
+                            Start a Conversation →
+                        </button>
+                    </div>
+
+                </div>
+
+                <footer class="mt-24 text-center">
+                    <p class="text-sm text-[#718096]">
+                        Powered by AI · Global Group of Institutes
+                    </p>
+                    <p class="mt-2 text-sm font-semibold text-[#173B70]">
+                        Built by Developer Wonka
+                    </p>
+                </footer>
+
+            </main>
+        </div>
+
+        <!-- Chat View -->
+        <section id="chat-view" class="hidden h-[calc(100vh-73px)] flex-col">
+
+            <!-- Chat Header -->
+            <div class="flex items-center justify-between border-b border-[#DCE4EF] bg-white px-5 py-4">
+
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#173B70] text-white">
+                        <i data-lucide="bot" class="h-6 w-6"></i>
+                    </div>
+
+                    <div>
+                        <h2 class="font-bold text-[#173B70]">Willard</h2>
+                        <p class="text-xs text-[#718096]">Your GGI College Assistant</p>
+                    </div>
+                </div>
+
+                <button id="back-home"
+                    class="rounded-lg border border-[#DCE4EF] px-4 py-2 text-sm text-[#173B70] hover:bg-[#F4F7FC]">
+                    Back Home
+                </button>
+
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messages-container"
+                class="flex-1 overflow-y-auto px-4 py-8">
+
+                <div id="welcome-screen" class="mx-auto flex max-w-2xl flex-col items-center justify-center py-12 text-center">
+
+                    <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#173B70] text-white shadow-lg shadow-blue-900/10">
+                        <i data-lucide="bot" class="h-9 w-9"></i>
+                    </div>
+
+                    <h2 class="text-2xl font-bold text-[#173B70]">
+                        Hello! I'm Willard.
+                    </h2>
+
+                    <p class="mt-3 max-w-md leading-7 text-[#718096]">
+                        Ask me anything about Global Group of Institutes.
+                        I'm here to help you find the information you need.
+                    </p>
+
+                    <div class="mt-8 grid w-full gap-3 sm:grid-cols-2">
+
+                        <button class="suggestion rounded-xl border border-[#DCE4EF] bg-white p-4 text-left text-sm transition hover:border-[#245A9B] hover:bg-blue-50">
+                            What courses does GGI offer?
+                        </button>
+
+                        <button class="suggestion rounded-xl border border-[#DCE4EF] bg-white p-4 text-left text-sm transition hover:border-[#245A9B] hover:bg-blue-50">
+                            Can I enroll any B.Tech degree without Physics?
+                        </button>
+
+                        <button class="suggestion rounded-xl border border-[#DCE4EF] bg-white p-4 text-left text-sm transition hover:border-[#245A9B] hover:bg-blue-50">
+                            What co-curriculum activities are available at GGI apart from inclass learnig?
+                        </button>
+
+                        <button class="suggestion rounded-xl border border-[#DCE4EF] bg-white p-4 text-left text-sm transition hover:border-[#245A9B] hover:bg-blue-50">
+                            How can I contact the college?
+                        </button>
+
+                    </div>
+                </div>
+
+                <div id="messages" class="mx-auto hidden max-w-3xl space-y-6"></div>
+
+            </div>
+
+            <!-- Composer -->
+            <div class="border-t border-[#DCE4EF] bg-white px-4 py-5">
+
+                <div class="mx-auto max-w-3xl">
+
+                    <form id="chat-form"
+                        class="flex items-end gap-3 rounded-2xl border border-[#DCE4EF] bg-[#F4F7FC] p-3 focus-within:border-[#245A9B]">
+
+                        <textarea
+                            id="chat-input"
+                            rows="1"
+                            placeholder="Ask Willard anything about GGI..."
+                            class="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-[#9AA8B8]"
+                            required
+                        ></textarea>
+
+                        <button id="send-button" type="submit"
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#173B70] text-white transition hover:bg-[#245A9B] disabled:cursor-not-allowed disabled:opacity-50"
+                            aria-label="Send message">
+
+                            <i data-lucide="send" class="h-5 w-5"></i>
+
+                        </button>
+
+                    </form>
+
+                    <p class="mt-3 text-center text-xs text-[#9AA8B8]">
+                        Willard can make mistakes. Verify important information with the college.
+                    </p>
+                    <p class="mt-3 text-center text-xs"><strong>Built by Developer Wonka</strong></p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <script type="module" src="./src/js/main.js"></script>
+
+</body>
+</html>
+
+</html>

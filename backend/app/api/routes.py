@@ -33,7 +33,8 @@ async def chat(request: ChatRequest):
 
     async def response_stream():
         async for chunk in run_rag_pipeline(
-            query=request.query
+            query=request.query,
+            history=request.history
         ):
             yield chunk
 
