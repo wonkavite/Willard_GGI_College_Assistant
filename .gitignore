@@ -15,3 +15,7 @@ __pycache__/
 
 # Testing
 .pytest_cache/
+# Generated files and datasets
+*.log
+.ipynb_checkpoints/
+.DS_Store
