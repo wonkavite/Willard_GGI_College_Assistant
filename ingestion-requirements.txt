@@ -1,0 +1,6 @@
+langchain-text-splitters==1.1.3
+trafilatura
+pymupdf
+pytesseract
+Pillow
+pypdf==7.0.0
