@@ -112,7 +112,7 @@ Also cite sources attached to the database records above."""
     if history:
         valid_history = []
 
-        for message in history[-5:]:
+        for message in history[-1:]:
             if not isinstance(message, dict):
                 continue
 
