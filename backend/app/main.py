@@ -16,24 +16,24 @@ async def lifespan(app: FastAPI):
     """
 
     # Application startup
-    print("Starting Willard...")
+    print("Starting Wonka...")
 
     await initialize_resources()
 
-    print("Willard startup complete.")
+    print("Wonka startup complete.")
 
     yield
 
     # Application shutdown
-    print("Shutting down Willard...")
+    print("Shutting down Wonka...")
 
     await close_resources()
 
-    print("Willard shutdown complete.")
+    print("Wonka shutdown complete.")
 
 
 app = FastAPI(
-    title="Willard - GGI College Information Assistant",
+    title="Wonka - GGI College Information Assistant",
     description="AI-powered college information assistant using RAG.",
     version="1.0.0",
     lifespan=lifespan
@@ -44,7 +44,7 @@ app.include_router(router)
 @app.get("/")
 async def root():
     return {
-        "message": "Willard API is running!",
+        "message": "Wonka API is running!",
         "status": "healthy"
     }
 

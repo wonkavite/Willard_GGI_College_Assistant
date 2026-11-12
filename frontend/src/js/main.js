@@ -160,11 +160,11 @@ function addMessage(role, content) {
 
     const bubble = document.createElement('div');
 
-    bubble.className = `max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-7 ${
-        isUser
-            ? 'rounded-tr-sm bg-[#173B70] text-white'
-            : 'rounded-tl-sm border border-[#DCE4EF] bg-white text-[#243449] markdown-content'
-    }`;
+    // Preserve the existing user message styling.
+    // Assistant responses use a plain-text presentation.
+    bubble.className = isUser
+        ? 'max-w-[85%] rounded-2xl rounded-tr-sm bg-[#173B70] px-4 py-3 text-sm leading-7 text-white'
+        : 'w-full text-sm leading-7 text-[#243449] markdown-content';
 
     if (isUser) {
         bubble.textContent = content;
@@ -174,59 +174,63 @@ function addMessage(role, content) {
 
     message.appendChild(avatar);
 
-const contentWrapper = document.createElement('div');
+    const contentWrapper = document.createElement('div');
 
-contentWrapper.className = 'flex min-w-0 max-w-[85%] flex-col gap-2';
+    contentWrapper.className = isUser
+        ? 'flex min-w-0 max-w-[85%] flex-col gap-2'
+        : 'flex min-w-0 w-full flex-col gap-2';
 
-contentWrapper.appendChild(bubble);
+    contentWrapper.appendChild(bubble);
 
-// Copy response button (assistant only)
-if (!isUser) {
-    const actions = document.createElement('div');
+    // Copy response button (assistant only)
+    if (!isUser) {
+        const actions = document.createElement('div');
 
-    actions.className = 'flex items-center justify-end';
+        actions.className = 'flex items-center justify-start';
 
-    const copyButton = document.createElement('button');
+        const copyButton = document.createElement('button');
 
-    copyButton.type = 'button';
-    copyButton.className =
-        'flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[#718096] transition hover:bg-[#EAF0F8] hover:text-[#173B70]';
+        copyButton.type = 'button';
+        copyButton.className =
+            'flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[#718096] transition hover:bg-[#EAF0F8] hover:text-[#173B70]';
 
-    copyButton.innerHTML = `
-        <i data-lucide="copy" class="h-3.5 w-3.5"></i>
-        <span>Copy</span>
-    `;
+        copyButton.innerHTML = `
+            <i data-lucide="copy" class="h-3.5 w-3.5"></i>
+            <span>Copy</span>
+        `;
 
-    copyButton.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(
-                bubble.innerText
-            );
+        copyButton.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(
+                    bubble.innerText
+                );
 
-            copyButton.innerHTML = `
-                <i data-lucide="check" class="h-3.5 w-3.5"></i>
-                <span>Copied</span>
-            `;
+                copyButton.innerHTML = `
+                    <i data-lucide="check" class="h-3.5 w-3.5"></i>
+                    <span>Copied</span>
+                `;
 
-            refreshIcons();
+                refreshIcons();
 
-        } catch (error) {
-            console.error('Copy failed:', error);
-        }
-    });
+            } catch (error) {
+                console.error('Copy failed:', error);
+            }
+        });
 
-    actions.appendChild(copyButton);
-    contentWrapper.appendChild(actions);
-}
+        actions.appendChild(copyButton);
+        contentWrapper.appendChild(actions);
+    }
 
-message.appendChild(contentWrapper);
-messages.appendChild(message);
+    message.appendChild(contentWrapper);
+    messages.appendChild(message);
 
     refreshIcons();
     scrollToBottom();
 
     return bubble;
 }
+
+
 
 // ==================================================
 // THINKING INDICATOR
@@ -408,7 +412,7 @@ async function sendMessage(text) {
         saveHistory();
 
     } catch (error) {
-        console.error('Willard API error:', error);
+        console.error('Wonka API error:', error);
 
         removeThinking();
 
@@ -418,7 +422,7 @@ async function sendMessage(text) {
 
         const errorMessage = assistantBubble
             ? 'Connection interrupted. Please try again.'
-            : 'Sorry, I could not connect to Willard. Please try again.';
+            : 'Sorry, I could not connect to Wonka. Please try again.';
 
         if (assistantBubble) {
             assistantBubble.textContent += '\n\n' + errorMessage;
@@ -472,6 +476,6 @@ chatInput.addEventListener('keydown', event => {
 
 refreshIcons();
 
-console.log('Willard frontend initialized!');
+console.log('Wonka frontend initialized!');
 console.log('Anonymous user ID:', userId);
 console.log('Previous messages loaded:', conversationHistory.length);

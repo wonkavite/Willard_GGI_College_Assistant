@@ -111,7 +111,7 @@ async def initialize_resources():
         groq_client = groq
         embedding_model_instance = model
 
-        print("All Willard resources initialized successfully.")
+        print("All Wonka resources initialized successfully.")
 
     except Exception:
         if client is not None:
@@ -146,4 +146,4 @@ async def close_resources():
 
     embedding_model_instance = None
 
-    print("All Willard resources closed successfully.")
+    print("All Wonka resources closed successfully.")

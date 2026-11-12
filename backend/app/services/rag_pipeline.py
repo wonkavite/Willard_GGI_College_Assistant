@@ -13,7 +13,7 @@ async def run_rag_pipeline(
     history: list[dict[str, str]] | None = None
 ) -> AsyncGenerator[str, None]:
     """
-    Execute the complete Willard RAG pipeline.
+    Execute the complete Wonka RAG pipeline.
 
     1. Retrieve relevant institutional chunks.
     2. Pass retrieved chunks to the LLM.
