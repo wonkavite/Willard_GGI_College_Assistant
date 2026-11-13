@@ -292,6 +292,10 @@ function scrollToBottom() {
 // ==================================================
 
 let isSending = false;
+const CHAT_ERROR_MESSAGE = "Something went wrong. I'm sorry for that dear";
+const CHAT_TIMEOUT_MS = 20000;
+const STREAM_COMPLETE_MARKER = 'WONKA_COMPLETE';
+const STREAM_ERROR_MARKER = 'WONKA_ERROR';
 
 async function sendMessage(text) {
     const query = text.trim();
@@ -299,31 +303,56 @@ async function sendMessage(text) {
     if (!query || isSending) return;
 
     isSending = true;
-    sendButton.disabled = true;
-
-    // Display user message
-    addMessage('user', query);
-
-    chatInput.value = '';
-
-    // Keep previous history separate from the current query
-    const historyForRequest = [...conversationHistory];
-
-    // Save current user message
-    const userMessage = {
-        role: 'user',
-        content: query
-    };
-
-    conversationHistory.push(userMessage);
-    saveHistory();
-
-    showThinking();
-
     let assistantBubble = null;
     let assistantResponse = '';
+    let userMessage = null;
+    let userMessageAdded = false;
+    let timeoutId = null;
+    let controller = null;
+    let offlineHandler = null;
+    let failureDisplayed = false;
 
     try {
+        sendButton.disabled = true;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            throw new Error('Browser reports that it is offline.');
+        }
+
+        controller = new AbortController();
+        offlineHandler = () => controller.abort();
+        window.addEventListener('offline', offlineHandler);
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            controller.abort();
+        }
+
+        // Display user message
+        addMessage('user', query);
+
+        chatInput.value = '';
+
+        // Keep previous history separate from the current query
+        const historyForRequest = [...conversationHistory];
+
+        // Save current user message
+        userMessage = {
+            role: 'user',
+            content: query
+        };
+
+        conversationHistory.push(userMessage);
+        userMessageAdded = true;
+        saveHistory();
+
+        showThinking();
+
+        timeoutId = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
+
+        if (controller.signal.aborted) {
+            throw new Error('The chat request was aborted because the browser went offline.');
+        }
+
         const response = await fetch('/api/chat', {
             method: 'POST',
 
@@ -335,72 +364,79 @@ async function sendMessage(text) {
                 user_id: userId,
                 query: query,
                 history: historyForRequest
-            })
+            }),
+            signal: controller.signal
         });
 
-        // Check HTTP errors
         if (!response.ok) {
-            const errorText = await response.text();
-
-            throw new Error(
-                `HTTP ${response.status}: ${errorText}`
-            );
+            throw new Error(`Chat request failed with HTTP ${response.status}.`);
         }
 
-        if (!response.body) {
-            throw new Error('The server did not provide a response stream.');
+        const contentType = response.headers.get('content-type');
+
+        if (!contentType || !contentType.toLowerCase().startsWith('text/plain')) {
+            throw new Error('The server returned an unexpected response format.');
         }
 
-        // Read streaming response
+        if (!response.body || typeof response.body.getReader !== 'function') {
+            throw new Error('The server did not provide a readable response stream.');
+        }
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        const markerLength = Math.max(
+            STREAM_COMPLETE_MARKER.length,
+            STREAM_ERROR_MARKER.length
+        );
+        let pendingText = '';
+
+        const renderResponseText = textChunk => {
+            if (!textChunk) return;
+
+            if (!assistantBubble) {
+                removeThinking();
+                assistantBubble = addMessage('assistant', '');
+            }
+
+            assistantResponse += textChunk;
+            assistantBubble.innerHTML = renderMarkdown(assistantResponse);
+            scrollToBottom();
+        };
 
         while (true) {
             const { done, value } = await reader.read();
 
-            if (done) break;
+            if (done) {
+                pendingText += decoder.decode();
+                break;
+            }
 
-            const chunk = decoder.decode(value, {
+            pendingText += decoder.decode(value, {
                 stream: true
             });
 
-            if (!chunk) continue;
+            const safeLength = pendingText.length - markerLength;
 
-            // First response chunk received
-            if (!assistantBubble) {
-                removeThinking();
-                assistantBubble = addMessage('assistant', '');
+            if (safeLength > 0) {
+                renderResponseText(pendingText.slice(0, safeLength));
+                pendingText = pendingText.slice(safeLength);
             }
-
-            assistantResponse += chunk;
-
-           // Render accumulated Markdown safely
-           assistantBubble.innerHTML = renderMarkdown(assistantResponse);
-
-            scrollToBottom();
         }
 
-        // Flush any remaining decoder content
-        const remainingText = decoder.decode();
-
-        if (remainingText) {
-            if (!assistantBubble) {
-                removeThinking();
-                assistantBubble = addMessage('assistant', '');
-            }
-
-            assistantResponse += remainingText;
-            assistantBubble.innerHTML = renderMarkdown(assistantResponse);
+        if (pendingText.endsWith(STREAM_ERROR_MARKER)) {
+            throw new Error('The server reported a streaming failure.');
         }
 
-        // Handle an empty response
-        if (!assistantResponse) {
-            removeThinking();
+        if (!pendingText.endsWith(STREAM_COMPLETE_MARKER)) {
+            throw new Error('The response stream ended without a completion marker.');
+        }
 
-            assistantResponse =
-                'I could not generate a response. Please try again.';
+        renderResponseText(
+            pendingText.slice(0, -STREAM_COMPLETE_MARKER.length)
+        );
 
-            addMessage('assistant', assistantResponse);
+        if (!assistantResponse.trim()) {
+            throw new Error('The server returned an empty response.');
         }
 
         // Save completed assistant response
@@ -409,28 +445,44 @@ async function sendMessage(text) {
             content: assistantResponse
         });
 
-        saveHistory();
+        try {
+            saveHistory();
+        } catch (error) {
+            console.error('Could not save conversation history:', error);
+        }
 
     } catch (error) {
         console.error('Wonka API error:', error);
 
-        removeThinking();
+        if (!failureDisplayed) {
+            failureDisplayed = true;
+            removeThinking();
 
-        // Remove the failed user message from saved history
-        conversationHistory.pop();
-        saveHistory();
+            if (assistantBubble) {
+                assistantBubble.textContent = CHAT_ERROR_MESSAGE;
+            } else {
+                assistantBubble = addMessage('assistant', CHAT_ERROR_MESSAGE);
+            }
 
-        const errorMessage = assistantBubble
-            ? 'Connection interrupted. Please try again.'
-            : 'Sorry, I could not connect to Wonka. Please try again.';
+            if (
+                userMessageAdded &&
+                conversationHistory[conversationHistory.length - 1] === userMessage
+            ) {
+                conversationHistory.pop();
+            }
 
-        if (assistantBubble) {
-            assistantBubble.textContent += '\n\n' + errorMessage;
-        } else {
-            addMessage('assistant', errorMessage);
+            try {
+                saveHistory();
+            } catch (historyError) {
+                console.error('Could not save conversation history:', historyError);
+            }
         }
 
     } finally {
+        clearTimeout(timeoutId);
+        if (offlineHandler) {
+            window.removeEventListener('offline', offlineHandler);
+        }
         removeThinking();
 
         isSending = false;
