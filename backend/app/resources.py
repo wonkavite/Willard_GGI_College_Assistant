@@ -1,4 +1,4 @@
-
+import firebase_admin
 import os
 import asyncio
 import weaviate
@@ -36,6 +36,7 @@ COLLECTION_NAME = os.getenv(
 weaviate_client = None
 groq_client = None
 embedding_model_instance = None
+firebase_app = None
 
 
 # ============================================================
@@ -50,11 +51,13 @@ async def initialize_resources():
     global weaviate_client
     global groq_client
     global embedding_model_instance
+    global firebase_app
 
     if any(resource is not None for resource in (
         weaviate_client,
         groq_client,
-        embedding_model_instance
+        embedding_model_instance,
+        firebase_app
     )):
         raise RuntimeError("Resources are already initialized.")
 
@@ -65,6 +68,8 @@ async def initialize_resources():
         "GROQ_MODEL": groq_model,
         "EMBEDDING_MODEL": embedding_model
     }
+    
+   
 
     missing = [
         name for name, value in required_variables.items()
@@ -78,8 +83,15 @@ async def initialize_resources():
 
     client = None
     groq = None
+    firebase = None
 
     try:
+
+        
+        # 4. Initialize Firebase Admin SDK
+        firebase = firebase_admin.initialize_app()
+        
+
         # 1. Weaviate asynchronous connection
         client = weaviate.use_async_with_weaviate_cloud(
             cluster_url=weaviate_url,
@@ -110,6 +122,7 @@ async def initialize_resources():
         weaviate_client = client
         groq_client = groq
         embedding_model_instance = model
+        firebase_app = firebase
 
         print("All Wonka resources initialized successfully.")
 
@@ -120,8 +133,10 @@ async def initialize_resources():
         if groq is not None:
             await groq.close()
 
+        
+        if firebase is not None:
+            firebase_admin.delete_app(firebase)
         raise
-
 
 # ============================================================
 # RESOURCE CLEANUP
@@ -135,6 +150,7 @@ async def close_resources():
     global weaviate_client
     global groq_client
     global embedding_model_instance
+    global firebase_app
 
     if weaviate_client is not None:
         await weaviate_client.close()
@@ -145,5 +161,9 @@ async def close_resources():
         groq_client = None
 
     embedding_model_instance = None
+
+    if firebase_app is not None:
+        firebase_admin.delete_app(firebase_app)
+        firebase_app = None
 
     print("All Wonka resources closed successfully.")
