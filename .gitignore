@@ -19,3 +19,4 @@ test_files
 *.log
 .ipynb_checkpoints/
 .DS_Store
+backend/tests/
