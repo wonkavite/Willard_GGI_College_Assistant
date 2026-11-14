@@ -12,7 +12,7 @@ from app.services.rag_pipeline import run_rag_pipeline
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(
+chat_router = APIRouter(
     prefix="/api",
     tags=["Chat"]
 )
@@ -32,7 +32,7 @@ class ChatRequest(BaseModel):
 # CHAT ENDPOINT
 # ============================================================
 
-@router.post("/chat")
+@chat_router.post("/chat")
 async def chat(request: ChatRequest):
 
     async def response_stream():

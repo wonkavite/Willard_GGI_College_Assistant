@@ -1,8 +1,9 @@
-from app.api.routes import router
+from app.api.routes import chat_router
 from contextlib import asynccontextmanager
-
+from app.api.admin_routes import admin_router
 from fastapi import FastAPI
-
+import os
+from fastapi.middleware.cors import CORSMiddleware
 from app.resources import (
     initialize_resources,
     close_resources
@@ -38,7 +39,24 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
-app.include_router(router)
+
+#CORS cofig
+origins = [
+    origin.strip()
+    for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-CSRF-Token"]
+)
+
+app.include_router(chat_router)
+app.include_router(admin_router)
 
 
 @app.get("/")
@@ -54,6 +72,9 @@ async def health():
     return {
         "status": "healthy"
     }
+
+
+
 
 
 #.\.venv\Scripts\Activate.ps1
