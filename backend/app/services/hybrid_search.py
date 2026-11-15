@@ -5,7 +5,7 @@ import weaviate
 from app import resources
 
 
-async def hybrid_chunk_retrieval(prompt, limit=5, alpha=0.8):
+async def hybrid_chunk_retrieval(prompt, limit=8, alpha=0.8):
     """
     Performs asynchronous hybrid retrieval using the shared
     Weaviate client and SentenceTransformer model.

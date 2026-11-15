@@ -16,6 +16,17 @@ const uploadSection = document.getElementById("upload-section");
 const uploadGuidelines = document.getElementById("upload-guidelines");
 const logoutButton = document.getElementById("logout-button");
 
+// Upload elements
+const uploadForm = document.getElementById("upload-form");
+const documentFile = document.getElementById("document-file");
+const uploadButton = document.getElementById("upload-button");
+const uploadProgressSection = document.getElementById("upload-progress-section");
+const uploadProgress = document.getElementById("upload-progress");
+const uploadPercentage = document.getElementById("upload-percentage");
+const uploadStatus = document.getElementById("upload-status");
+const uploadResult = document.getElementById("upload-result");
+
+
 // =========================================
 // VIEW MANAGEMENT
 // =========================================
@@ -56,6 +67,18 @@ function clearLoginMessageTimeout() {
         loginMessageTimeout = null;
     }
 }
+
+
+const MAX_UPLOAD_SIZE = 15 * 1024 * 1024;
+const UPLOAD_SUCCESS_MESSAGE_DURATION = 2000;
+let uploadResultTimeout = null;
+
+const SUPPORTED_EXTENSIONS = [
+    ".pdf",
+    ".docx",
+    ".txt",
+    ".md"
+];
 
 function clearLoginMessage() {
     clearLoginMessageTimeout();
@@ -320,3 +343,217 @@ logoutButton.addEventListener("click", async () => {
         logoutButton.textContent = "Logout";
     }
 });
+
+
+
+
+
+
+
+
+// =========================================
+// DOCUMENT UPLOAD
+// =========================================
+
+uploadForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const file = documentFile.files[0];
+
+    // Validate file selection
+    if (!file) {
+        showUploadResult("Please select a document.", false);
+        return;
+    }
+
+    // Validate extension
+    const extension = file.name
+        .slice(file.name.lastIndexOf("."))
+        .toLowerCase();
+
+    if (!SUPPORTED_EXTENSIONS.includes(extension)) {
+        showUploadResult(
+            "Unsupported file format. Please select PDF, DOCX, TXT or MD.",
+            false
+        );
+        return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_UPLOAD_SIZE) {
+        showUploadResult(
+            "File size exceeds the 15 MB upload limit.",
+            false
+        );
+        return;
+    }
+
+    // Get CSRF token
+    const csrfToken = getCookie("csrf_token");
+
+    if (!csrfToken) {
+        showUploadResult(
+            "Your security token is missing. Please refresh the page and try again.",
+            false
+        );
+        return;
+    }
+
+    // Prepare upload
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const xhr = new XMLHttpRequest();
+
+    uploadButton.disabled = true;
+    documentFile.disabled = true;
+    uploadButton.textContent = "Uploading...";
+
+    clearUploadResultTimeout();
+    uploadResult.hidden = true;
+    uploadResult.textContent = "";
+
+    uploadProgressSection.hidden = false;
+    uploadProgress.value = 0;
+    uploadPercentage.textContent = "0%";
+    uploadStatus.textContent = "Uploading document...";
+
+    // Track upload progress
+    xhr.upload.addEventListener("progress", (event) => {
+        if (!event.lengthComputable) return;
+
+        const percentage = Math.round(
+            (event.loaded / event.total) * 100
+        );
+
+        uploadProgress.value = percentage;
+        uploadPercentage.textContent = `${percentage}%`;
+    });
+
+    // Upload completed; server is processing the document
+    xhr.upload.addEventListener("load", () => {
+        uploadStatus.textContent =
+            "Document received. Processing and indexing...";
+    });
+
+    // Handle server response
+    xhr.addEventListener("load", () => {
+        let data = xhr.response;
+
+        if (!data || typeof data !== "object") {
+            try {
+                data = JSON.parse(xhr.responseText);
+            } catch {
+                data = {};
+            }
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+            uploadProgress.value = 100;
+            uploadPercentage.textContent = "100%";
+
+            showUploadResult(
+                `Document uploaded successfully!\n\n` +
+                `Filename: ${data.filename}\n` +
+                `Chunks indexed: ${data.inserted_objects}`,
+                true
+            );
+
+            uploadForm.reset();
+
+        } else {
+            const message =
+                data.detail ||
+                "Document upload failed. Please try again.";
+
+            showUploadResult(message, false);
+        }
+
+        uploadProgressSection.hidden = true;
+        uploadButton.disabled = false;
+        documentFile.disabled = false;
+        uploadButton.textContent = "Upload Document";
+    });
+
+    // Handle network errors
+    xhr.addEventListener("error", () => {
+        showUploadResult(
+            "Unable to connect to the server. Please check your connection.",
+            false
+        );
+
+        resetUploadControls();
+    });
+
+    xhr.addEventListener("abort", () => {
+        showUploadResult(
+            "The upload was cancelled.",
+            false
+        );
+
+        resetUploadControls();
+    });
+
+    xhr.open("POST", "/api/admin/upload");
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+
+    xhr.send(formData);
+});
+
+
+// =========================================
+// UPLOAD RESULT HELPERS
+// =========================================
+
+function showUploadResult(message, success) {
+    clearUploadResultTimeout();
+    uploadResult.textContent = message;
+    uploadResult.hidden = false;
+
+    uploadResult.classList.remove(
+        "border-red-200",
+        "bg-red-50",
+        "text-red-700",
+        "border-green-200",
+        "bg-green-50",
+        "text-green-700"
+    );
+
+    uploadResult.classList.add(
+        "border",
+        success ? "border-green-200" : "border-red-200",
+        success ? "bg-green-50" : "bg-red-50",
+        success ? "text-green-700" : "text-red-700"
+    );
+
+    if (success) {
+        const timeout = setTimeout(() => {
+            if (uploadResultTimeout !== timeout) {
+                return;
+            }
+
+            uploadResult.hidden = true;
+            uploadResult.textContent = "";
+            uploadResultTimeout = null;
+        }, UPLOAD_SUCCESS_MESSAGE_DURATION);
+
+        uploadResultTimeout = timeout;
+    }
+}
+
+
+function clearUploadResultTimeout() {
+    if (uploadResultTimeout !== null) {
+        clearTimeout(uploadResultTimeout);
+        uploadResultTimeout = null;
+    }
+}
+
+
+function resetUploadControls() {
+    uploadProgressSection.hidden = true;
+    uploadButton.disabled = false;
+    documentFile.disabled = false;
+    uploadButton.textContent = "Upload Document";
+}
