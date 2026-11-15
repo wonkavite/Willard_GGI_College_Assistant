@@ -9,7 +9,9 @@ __pycache__/
 
 # Virtual environment
 .venv/
-
+# Firebase service-account credentials
+*service-account*.json
+*firebase-adminsdk*.json
 # IDE
 .vscode/
 test_files

@@ -1,0 +1,28 @@
+# Git
+.git/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+**/*service-account*.json
+**/*firebase-adminsdk*.json
+
+# Python
+.venv/
+**/__pycache__/
+*.py[cod]
+
+# Testing
+.pytest_cache/
+**/.pytest_cache/
+backend/tests/
+
+# Development files
+.vscode/
+.ipynb_checkpoints/
+*.log
+
+# Not required in backend image
+frontend/
+test_files/
