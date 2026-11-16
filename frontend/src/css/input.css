@@ -9,6 +9,43 @@
     background-size: cover;
 }
 
+button[data-open-chat] {
+    position: relative;
+    animation: talk-button-glow 2.5s ease-in-out infinite;
+}
+
+button[data-open-chat]::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #34D399;
+    transform: translateY(-50%);
+    animation: talk-button-status 1.25s ease-in-out infinite;
+}
+
+@keyframes talk-button-status {
+    50% {
+        opacity: 0.35;
+    }
+}
+
+@keyframes talk-button-glow {
+    50% {
+        box-shadow: 0 0 11px 1px rgb(52 211 153 / 16%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    button[data-open-chat],
+    button[data-open-chat]::before {
+        animation: none;
+    }
+}
+
 /* =========================================
    WONKA MARKDOWN STYLING
 ========================================= */
