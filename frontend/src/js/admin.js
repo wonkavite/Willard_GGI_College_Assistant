@@ -3,6 +3,10 @@
 // WONKA ADMIN DASHBOARD
 // =========================================
 
+import { API_BASE_URL } from './api.js';
+
+let csrfToken = null;
+
 // Login elements
 const loginSection = document.getElementById("login-section");
 const loginForm = document.getElementById("login-form");
@@ -123,6 +127,7 @@ function showLoginMessage(message) {
 
 
 async function checkAdminSession() {
+    csrfToken = null;
     showLoginView();
 
     const controller = new AbortController();
@@ -132,9 +137,9 @@ async function checkAdminSession() {
     }, SESSION_TIMEOUT);
 
     try {
-        const response = await fetch("/api/admin/session", {
+        const response = await fetch(`${API_BASE_URL}/api/admin/session`, {
             method: "GET",
-            credentials: "same-origin",
+            credentials: "include",
             signal: controller.signal
         });
 
@@ -143,6 +148,16 @@ async function checkAdminSession() {
         }
 
         if (response.ok) {
+            const data = await response.json();
+
+            if (typeof data.csrf_token !== "string" || !data.csrf_token) {
+                showLoginMessage(
+                    "Unable to verify your security token. Please try again."
+                );
+                return false;
+            }
+
+            csrfToken = data.csrf_token;
             showDashboardView();
             return true;
         }
@@ -208,6 +223,7 @@ loginForm.addEventListener("submit", async (event) => {
         .value;
 
     clearLoginMessage();
+    csrfToken = null;
 
     loginButton.disabled = true;
     loginButton.textContent = "Logging in...";
@@ -219,9 +235,9 @@ loginForm.addEventListener("submit", async (event) => {
     }, SESSION_TIMEOUT);
 
     try {
-        const response = await fetch("/api/admin/login", {
+        const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
             method: "POST",
-            credentials: "same-origin",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json"
             },
@@ -248,6 +264,16 @@ loginForm.addEventListener("submit", async (event) => {
             return;
         }
 
+        const data = await response.json();
+
+        if (typeof data.csrf_token !== "string" || !data.csrf_token) {
+            showLoginMessage(
+                "Login response did not contain a security token. Please try again."
+            );
+            return;
+        }
+
+        csrfToken = data.csrf_token;
         showLoginSuccess("Login successful! Verifying your session...");
 
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -285,14 +311,6 @@ checkAdminSession();
 
 
 
-function getCookie(name) {
-    const cookie = document.cookie
-        .split("; ")
-        .find(row => row.startsWith(`${name}=`));
-
-    return cookie ? cookie.split("=")[1] : null;
-}
-
 // =========================================
 // ADMIN LOGOUT
 // =========================================
@@ -302,15 +320,13 @@ logoutButton.addEventListener("click", async () => {
     logoutButton.textContent = "Logging out...";
 
     try {
-        const csrfToken = getCookie("csrf_token");
-
         if (!csrfToken) {
             throw new Error("CSRF token is missing.");
         }
 
-        const response = await fetch("/api/admin/logout", {
+        const response = await fetch(`${API_BASE_URL}/api/admin/logout`, {
             method: "POST",
-            credentials: "same-origin",
+            credentials: "include",
             headers: {
                 "X-CSRF-Token": csrfToken
             }
@@ -319,6 +335,8 @@ logoutButton.addEventListener("click", async () => {
         if (!response.ok) {
             throw new Error(`Logout failed (HTTP ${response.status}).`);
         }
+
+        csrfToken = null;
 
         // Clear the password field
         document.getElementById("admin-password").value = "";
@@ -389,8 +407,6 @@ uploadForm.addEventListener("submit", (event) => {
     }
 
     // Get CSRF token
-    const csrfToken = getCookie("csrf_token");
-
     if (!csrfToken) {
         showUploadResult(
             "Your security token is missing. Please refresh the page and try again.",
@@ -494,7 +510,7 @@ uploadForm.addEventListener("submit", (event) => {
         resetUploadControls();
     });
 
-    xhr.open("POST", "/api/admin/upload");
+    xhr.open("POST", `${API_BASE_URL}/api/admin/upload`);
     xhr.withCredentials = true;
     xhr.setRequestHeader("X-CSRF-Token", csrfToken);
 

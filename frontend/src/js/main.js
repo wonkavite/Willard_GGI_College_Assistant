@@ -1,4 +1,5 @@
 import '../css/input.css';
+import { API_BASE_URL } from './api.js';
 
 import { createIcons, Bot, User, Send, Copy, ExternalLink, Check } from 'lucide';
 
@@ -353,7 +354,7 @@ async function sendMessage(text) {
             throw new Error('The chat request was aborted because the browser went offline.');
         }
 
-        const response = await fetch('/api/chat', {
+        const response = await fetch(`${API_BASE_URL}/api/chat`, {
             method: 'POST',
 
             headers: {

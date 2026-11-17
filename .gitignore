@@ -2,7 +2,7 @@
 .env
 .env.*
 !.env.example
-
+frontend/dist/
 # Python
 __pycache__/
 *.py[cod]

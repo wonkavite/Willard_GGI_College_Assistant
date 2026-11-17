@@ -6,13 +6,13 @@
   "scripts": {
     "dev": "vite",
     "css:watch": "npx @tailwindcss/cli -i ./src/css/input.css -o ./public/output.css --watch",
-    "build": "npx @tailwindcss/cli -i ./src/css/input.css -o ./public/output.css --minify",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@tailwindcss/cli": "^4.3.5",
     "dompurify": "^3.4.17",

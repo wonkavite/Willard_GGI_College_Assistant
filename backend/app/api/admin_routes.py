@@ -7,6 +7,7 @@ import httpx
 from fastapi import (
     APIRouter,
     HTTPException,
+    Request,
     Response,
     status,
     Depends,
@@ -38,6 +39,19 @@ MAX_UPLOAD_SIZE = 15 * 1024 * 1024  # 15 MB
 SUPPORTED_FORMATS = {".pdf", ".docx", ".txt", ".md"}
 
 
+def _auth_cookie_options() -> dict:
+    is_development = (
+        os.getenv("ENVIRONMENT", "production").strip().lower()
+        == "development"
+    )
+
+    return {
+        "secure": not is_development,
+        "samesite": "lax" if is_development else "none",
+        "path": "/"
+    }
+
+
 # Login Pydantic model
 class AdminLoginRequest(BaseModel):
     username: str = Field(min_length=1, max_length=64)
@@ -58,18 +72,11 @@ async def admin_login(
 
         session_cookie = await create_admin_session(id_token)
 
-        is_development = (
-            os.getenv("ENVIRONMENT", "production").strip().lower()
-            == "development"
-        )
-
         response.set_cookie(
             key="admin_session",
             value=session_cookie,
             httponly=True,
-            secure=not is_development,
-            samesite="lax",
-            path="/"
+            **_auth_cookie_options()
         )
 
         csrf_token = generate_csrf_token()
@@ -78,12 +85,13 @@ async def admin_login(
             key="csrf_token",
             value=csrf_token,
             httponly=False,
-            secure=not is_development,
-            samesite="lax",
-            path="/"
+            **_auth_cookie_options()
         )
 
-        return {"message": "Admin login successful."}
+        return {
+            "message": "Admin login successful.",
+            "csrf_token": csrf_token
+        }
 
     except ValueError:
         raise HTTPException(
@@ -201,25 +209,16 @@ async def admin_logout(
     response: Response,
     _: None = Depends(verify_csrf_token)
 ):
-    is_development = (
-        os.getenv("ENVIRONMENT", "production").strip().lower()
-        == "development"
-    )
-
     response.delete_cookie(
         key="admin_session",
         httponly=True,
-        secure=not is_development,
-        samesite="lax",
-        path="/"
+        **_auth_cookie_options()
     )
 
     response.delete_cookie(
         key="csrf_token",
         httponly=False,
-        secure=not is_development,
-        samesite="lax",
-        path="/"
+        **_auth_cookie_options()
     )
 
     return {"message": "Admin logged out successfully."}
@@ -228,9 +227,23 @@ async def admin_logout(
 # Get admin session endpoint
 @admin_router.get("/session")
 async def admin_session(
+    request: Request,
+    response: Response,
     admin: dict = Depends(get_current_admin)
 ):
+    csrf_token = request.cookies.get("csrf_token")
+
+    if not csrf_token:
+        csrf_token = generate_csrf_token()
+        response.set_cookie(
+            key="csrf_token",
+            value=csrf_token,
+            httponly=False,
+            **_auth_cookie_options()
+        )
+
     return {
         "authenticated": True,
-        "message": "Admin session is valid."
+        "message": "Admin session is valid.",
+        "csrf_token": csrf_token
     }
