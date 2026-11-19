@@ -1,6 +1,9 @@
 #This file verify admin credentials and create admin sessions
 #importing necessary libraries
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 import secrets
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -96,6 +99,7 @@ async def verify_admin_credentials(username: str, password: str) -> str:
 
 
 #Creating the admin session
+
 async def create_admin_session(id_token: str) -> str:
     """
     Exchange a Firebase ID token for a session cookie.
@@ -111,5 +115,7 @@ async def create_admin_session(id_token: str) -> str:
 
         return session_cookie
 
-    except Exception as exc:
-        raise RuntimeError("Unable to create admin session.") from exc
+    except Exception:
+        logger.exception("Firebase admin session creation failed.")
+        raise RuntimeError("Unable to create admin session.") from None
+
