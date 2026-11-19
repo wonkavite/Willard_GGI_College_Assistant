@@ -1,8 +1,12 @@
 import firebase_admin
 import os
 import asyncio
+import json
+from firebase_admin import credentials
 import weaviate
+import logging
 
+logger = logging.getLogger(__name__)
 from dotenv import load_dotenv
 from groq import AsyncGroq
 from sentence_transformers import SentenceTransformer
@@ -89,7 +93,27 @@ async def initialize_resources():
 
         
         # 4. Initialize Firebase Admin SDK
-        firebase = firebase_admin.initialize_app()
+        firebase_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+        if firebase_json and firebase_json.strip().startswith("{"):
+            firebase_credential = credentials.Certificate(
+                json.loads(firebase_json)
+            )
+        else:
+            firebase_credential = credentials.ApplicationDefault()
+
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+
+        logger.info(
+                "Firebase project ID configured: %s",
+                 repr(project_id)
+)
+        firebase = firebase_admin.initialize_app(
+            firebase_credential,
+            {
+                "projectId": os.getenv("GOOGLE_CLOUD_PROJECT", "").strip()
+            }
+        )
         
 
         # 1. Weaviate asynchronous connection
