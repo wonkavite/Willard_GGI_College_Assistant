@@ -59,18 +59,22 @@ class AdminLoginRequest(BaseModel):
 
 
 # Admin login endpoint
+
 @admin_router.post("/login")
-async def admin_login(
-    credentials: AdminLoginRequest,
-    response: Response
-):
+async def admin_login(credentials: AdminLoginRequest, response: Response):
+    auth_stage = "Firebase credential verification"
+
     try:
         id_token = await verify_admin_credentials(
             credentials.username,
             credentials.password
         )
 
+        auth_stage = "Firebase session creation"
+
         session_cookie = await create_admin_session(id_token)
+
+        auth_stage = "Session cookie configuration"
 
         response.set_cookie(
             key="admin_session",
@@ -100,17 +104,24 @@ async def admin_login(
         )
 
     except httpx.HTTPError:
+        logger.exception(
+            "Authentication service HTTP error during %s",
+            auth_stage
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Authentication service is unavailable."
         )
 
     except RuntimeError:
+        logger.exception(
+            "Admin authentication failed during %s",
+            auth_stage
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Admin authentication can not be completed"
         )
-
 
 # Admin document-upload endpoint
 @admin_router.post("/upload")
