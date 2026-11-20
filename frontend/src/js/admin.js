@@ -147,7 +147,7 @@ async function checkAdminSession() {
             return false;
         }
 
-        if (response.ok) {
+        if (response.status === 200) {
             const data = await response.json();
 
             if (typeof data.csrf_token !== "string" || !data.csrf_token) {

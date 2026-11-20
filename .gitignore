@@ -1,6 +1,7 @@
 # Environment variables
 .env
 .env.*
+      MOBILE_ADMIN_SESSION_DIAGNOSTIC.md
 !.env.example
 frontend/dist/
 # Python
